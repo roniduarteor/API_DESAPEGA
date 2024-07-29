@@ -8,7 +8,15 @@ import './models/usuarioModel.js'
 
 const PORT = process.env.PORT
 
+//importar as rotas
+import usuarioRouter from './routes/usuarioRoute.js'
 const app = express()
+
+app.use(express.urlencoded({extended: true})) // para trabalhar com imagens
+app.use(express.json())
+
+//Utilizar a rota
+app.use('/usuarios', usuarioRouter)
 
 //404
 app.use((request, response)=>{
