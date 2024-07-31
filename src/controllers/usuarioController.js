@@ -39,7 +39,7 @@ export const register = (request, response) => {
         const insertSql = /*sql*/ `insert into usuarios(??, ??, ??, ??, ??, ??)
         values(?, ?, ?, ?, ?, ?)`
 
-        const insertData = ['usuario_id', 'nome', 'email', 'telefone', 'senha', 'imagem', id, nome, email, telefone, senha, imagem]
+        const insertData = ['usuario_id', 'nome', 'email', 'telefone', 'senha', 'imagem', id, nome, email, telefone, senhaHash, imagem]
 
         conn.query(insertSql, insertData, (err)=>{
             if(err){
@@ -78,5 +78,50 @@ export const register = (request, response) => {
 // Login
 
 export const login = (request, response) => {
-    response.send("Olá, Mundo!")
+    const {email, senha} = request.body
+
+    // validações
+    if(!email){
+        response.status(400).json({message: "O email é obrigatório"})
+        return
+    }
+    if(!senha){
+        response.status(400).json({message: "A senha é obrigatória"})
+        return
+    }
+
+    const checkSql = /*sql*/ `select * from usuarios where ?? = ?`
+    const checkData = ['email', email]
+    conn.query(checkSql, checkData, async (err, data)=>{
+        if(err){
+            console.error(err)
+            response.status(500).json({err: "Erro ao buscar usuário"})
+            return
+        }
+
+        if(data.length === 0){
+            response.status(404).json({err: "Usuário não encontrado"})
+            return
+        }
+
+        const usuario = data[0]
+
+        // Verificar se a senha existe/comparar
+        const compararSenha = await bcrypt.compare(senha, usuario.senha)// responsável por fazer a comparação dessa senha
+
+        // console.log("senha do usuário: ", senha)
+        // console.log("senha do objeto: ", usuario.senha)
+        // console.log('comparar senha: ', compararSenha)
+
+        if(!compararSenha){
+            return response.status(401).json({message: "Senha inválida!"})
+        }
+
+        try {
+            await createUserToken(usuario, request, response)
+        } catch (error) {
+            console.error(error)
+            response.status(500).json({err: "Erro ao processar informação"})
+        }
+    })
 }
