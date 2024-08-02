@@ -1,10 +1,12 @@
 import conn from "../config/conn.js"
 import bcrypt from 'bcrypt'
 import {v4 as uuidv4} from 'uuid'
+import jwt from 'jsonwebtoken'
 
 
 // helpers
 import createUserToken from "../helpers/create-user-token.js"
+import getToken from "../helpers/get-token.js"
 
 // Criar usuário
 export const register = (request, response) => {
@@ -76,7 +78,6 @@ export const register = (request, response) => {
 }
 
 // Login
-
 export const login = (request, response) => {
     const {email, senha} = request.body
 
@@ -125,3 +126,69 @@ export const login = (request, response) => {
         }
     })
 }
+
+// Verificar usuário
+export const checkUser = (request, response) => {
+    let usuarioAtual
+    // armazenar o token do usuario que está logado na aplicação
+
+    if(request.headers.authorization){
+        const token = getToken(request)
+        
+        const decoded = jwt.decode(token, "SENHASUPERSEGURA") // função para decodificar o token
+        
+        const usuarioId = decoded.id
+
+        const checkSql = /*sql*/ `select * from usuarios where ?? = ?`
+        const checkData = ['usuario_id', usuarioId]
+        conn.query(checkSql, checkData, (err, data)=>{
+            if(err){
+                console.error(err)
+                response.status(500).json({err: 'Erro ao verificar usuário'})
+                return
+            }
+
+            usuarioAtual = data[0]
+            response.status(200).json(usuarioAtual)
+        })
+    }else{
+
+    }
+    // criar um helper para fazer a verificação
+}
+
+export const getUserById = (request, response) => {
+    const {id} = request.params
+
+    const checkSql = /*sql*/ `
+    select usuario_id, nome, email, telefone, imagem from usuarios
+    where ?? = ? 
+    `
+
+    const checkData = ["usuario_id", id]
+
+    conn.query(checkSql, checkData, (err, data)=>{
+        if(err){
+            console.error(err)
+            request.status(500).json({err: 'Erro ao buscar usuário pelo ID'})
+            return
+        }
+
+        if(data.length === 0){
+            response.status(404).json({message: "Usuário não encontrado!"})
+            return
+        }
+
+        const usuario = data[0]
+        response.status(200).json(usuario)
+    })
+}
+
+// aqui vai precisar verificar se ele está logado e fazer o upload de imagem de perfil
+export const editUser = async (request, response) => {
+    const {id} = request.params
+
+    //verificar se o usuário está logado a partir do token
+    const token = getToken(request)
+    console.log(token) 
+} 
