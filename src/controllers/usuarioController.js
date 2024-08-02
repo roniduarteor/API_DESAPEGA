@@ -7,6 +7,7 @@ import jwt from 'jsonwebtoken'
 // helpers
 import createUserToken from "../helpers/create-user-token.js"
 import getToken from "../helpers/get-token.js"
+import getUserByToken from "../helpers/get-user-by-token.js"
 
 // Criar usuário
 export const register = (request, response) => {
@@ -189,6 +190,71 @@ export const editUser = async (request, response) => {
     const {id} = request.params
 
     //verificar se o usuário está logado a partir do token
-    const token = getToken(request)
-    console.log(token) 
+    try {
+        const token = getToken(request) 
+        // buscar dados o banco, nova consulta ao banco
+        const user =  await getUserByToken(token)  
+
+        const {nome, email, telefone} = request.body
+        if(!nome){
+            return response.status(400).json({message: "O nome é obrigatório!"})
+        }
+        if(!email){
+            return response.status(400).json({message: "O email é obrigatório!"})
+        }
+        if(!telefone){
+            return response.status(400).json({message: "O telefone é obrigatório!"})
+        }
+
+        const checkSql = /*sql*/ `select * from usuarios where ?? = ?`
+        const checkData = ["usuario_id", id]
+
+        conn.query(checkSql, checkData, (err, data)=>{
+            if(err){
+                console.error(err)
+                response.status(500).json({err: "Erro ao buscar usuário"})
+                return
+            }
+
+            if(data.length === 0){
+                response.status(404).json({message: "Usuário não encontrado"})
+                return
+            }
+
+            // validação se o usuário do banco é o mesmo do token
+
+            // verifica se o email já está em uso
+            const checkEmailSql = /*sql*/ `select * from usuarios where ?? = ? and ?? != ?`
+            const checkEmailData = ['email', email, 'usuario_id', id]
+            conn.query(checkEmailSql, checkEmailData, (err, data)=>{
+                if(err){
+                    console.error(err)
+                    response.status(500).json({err: "Erro ao verificar se email já existe"})
+                    return
+                }
+
+                if(data.length > 0){
+                    response.status(409).json({err: "Esse e-mail já está em uso!"})
+                    return
+                }
+
+                const updateSql = /*sql*/ `update usuarios set ? where ?? = ?`
+                const updateData = [{nome, email, telefone}, "usuario_id", id]
+                conn.query(updateSql, updateData, (err)=>{
+                    if(err){
+                        console.error(err)
+                        response.status(500).json({err: "Erro ao atualizar dados do usuário"})
+                        return
+                    }
+
+                    response.status(200).json({messagae: "Usuário atualizado!"})
+                })
+            })
+        })
+        
+    } catch (error) {
+        console.error(error)
+        response.status(500).json({err: error})
+        return
+    } 
 } 

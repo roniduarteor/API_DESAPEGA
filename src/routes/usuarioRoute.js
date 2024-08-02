@@ -4,6 +4,7 @@ import { checkUser, login, register, getUserById, editUser } from "../controller
 
 //importar os helpers
 import validarUsuario from "../helpers/validar-user.js";
+import verifyToken from '../helpers/verify-token.js'
 
 const router = Router()
 
@@ -12,6 +13,6 @@ router.post('/register', validarUsuario, register)
 router.post('/login', login)
 router.get('/checkuser', checkUser) // auxiliar o front-end
 router.get("/:id", getUserById)
-router.put('/edit/:id', editUser)
+router.put('/edit/:id', verifyToken, editUser)
 
 export default router;
