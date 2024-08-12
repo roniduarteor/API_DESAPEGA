@@ -144,15 +144,16 @@ export const getAllObjectUser = async (request, response) => {
                 return
             }
 
-            const objetosUsuario = data.map((objeto)=>({
+            const objetosUsuario = data.map((objeto) => ({
                 objeto_id: objeto.objeto_id,
                 usuario_id: objeto.usuario_id,
                 nome: objeto.nome,
                 peso: objeto.peso,
                 cor: objeto.cor,
                 descricao: objeto.descricao,
-                image_paths: objeto.image_path.split(',')
-            }))
+                image_paths: objeto.image_path ? objeto.image_path.split(',') : [] // Protege contra casos onde image_path pode ser null ou undefined
+            }));
+            
             response.status(200).json(objetosUsuario)
         })
 

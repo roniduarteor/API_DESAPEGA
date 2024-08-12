@@ -2,6 +2,7 @@ import express from 'express'
 import 'dotenv/config'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import cors from 'cors'
 
 import conn from './config/conn.js'
 
@@ -27,7 +28,7 @@ const __dirname = path.dirname(__filename) // caminho do arquivo
 app.use("/public", express.static(path.join(__dirname, "public")))
 
 //CORS
-app.use()   
+app.use(cors())   
 
 //Utilizar a rota
 app.use('/usuarios', usuarioRouter)
