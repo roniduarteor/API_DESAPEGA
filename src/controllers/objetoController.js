@@ -89,23 +89,53 @@ export const getAllObjectUser = async (request, response) => {
 
         const usuarioId = user.usuario_id
         const selectSql = /*sql*/ `
-        SELECT
-        obj.objeto_id,
-        obj.usuario_id,
-        obj.nome,
-        obj.peso,
-        obj.cor,
-        obj.descricao,
-        GROUP_CONCAT(obj_img.image_path ',') AS image_path
-        FROM
-            objetos AS obj
-        LEFT JOIN
-            objeto_images AS obj_img ON obj.objeto_id = obj_img.objeto_id
-        WHERE
-            obj.usuario_id = ?
-        GROUP BY 
-            obj.objeto_id, obj.usuario_id, obj.nome, obj.peso, obj.cor, obj.descricao
+        SELECT 
+                obj.objeto_id,
+                obj.usuario_id,
+                obj.nome,
+                obj.peso,
+                obj.descricao,
+                obj.cor,
+                GROUP_CONCAT(obj_img.image_path SEPARATOR',') AS image_path
+            FROM
+                objetos AS obj
+            LEFT JOIN
+                objeto_images AS obj_img ON obj.objeto_id = obj_img.objeto_id
+            WHERE
+                obj.usuario_id = ?
+            GROUP BY 
+                obj.objeto_id,
+                obj.usuario_id,
+                obj.nome,
+                obj.peso,
+                obj.descricao,
+                obj.cor
         `
+
+// const selectSql = /*sql*/ `
+// SELECT 
+//     obj.objeto_id,
+//     obj.usuario_id,
+//     obj.nome,
+//     obj.peso,
+//     obj.descricao,
+//     obj.cor,
+//     GROUP_CONCAT(obj_img.image_path SEPARATOR ',') AS image_path
+// FROM
+//     objetos AS obj
+// LEFT JOIN
+//     objeto_images AS obj_img ON obj.objeto_id = obj_img.objeto_id
+// WHERE
+//     obj.usuario_id = ?
+// GROUP BY 
+//     obj.objeto_id,
+//     obj.usuario_id,
+//     obj.nome,
+//     obj.peso,
+//     obj.descricao,
+//     obj.cor
+// `;
+
 
         conn.query(selectSql, [usuarioId], (err, data) =>{ 
             if(err){
@@ -113,11 +143,21 @@ export const getAllObjectUser = async (request, response) => {
                 response.status(500).json({err: "Erro ao buscar objetos"})
                 return
             }
-            const objetosUsuario = data.map()
+
+            const objetosUsuario = data.map((objeto)=>({
+                objeto_id: objeto.objeto_id,
+                usuario_id: objeto.usuario_id,
+                nome: objeto.nome,
+                peso: objeto.peso,
+                cor: objeto.cor,
+                descricao: objeto.descricao,
+                image_paths: objeto.image_path.split(',')
+            }))
             response.status(200).json(objetosUsuario)
         })
 
     } catch (error) {
-
+        console.error(error)
+        response.status(500).json({err: 'Erro ao processar a requisição'})
     }
 }
